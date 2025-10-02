@@ -25,6 +25,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.HostnameVerifier;
@@ -233,7 +234,8 @@ public class Main implements IXposedHookLoadPackage {
                     new XC_MethodReplacement() {
                         @Override
                         protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                            return 0;
+                            X509Certificate[] chain = (X509Certificate[]) param.args[0];
+                            return Arrays.asList(chain); // ✅ 返回原始链
                         }
                     });
 
@@ -244,8 +246,8 @@ public class Main implements IXposedHookLoadPackage {
                     String.class, new XC_MethodReplacement() {
                         @Override
                         protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                            ArrayList<X509Certificate> list = new ArrayList<X509Certificate>();
-                            return list;
+                            X509Certificate[] chain = (X509Certificate[]) param.args[0];
+                            return Arrays.asList(chain); // ✅ 返回原始链
                         }
                     });
 
@@ -257,8 +259,8 @@ public class Main implements IXposedHookLoadPackage {
                     SSLSession.class, new XC_MethodReplacement() {
                         @Override
                         protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                            ArrayList<X509Certificate> list = new ArrayList<X509Certificate>();
-                            return list;
+                            X509Certificate[] chain = (X509Certificate[]) param.args[0];
+                            return Arrays.asList(chain); // ✅ 返回原始链
                         }
                     });
         }
@@ -268,7 +270,6 @@ public class Main implements IXposedHookLoadPackage {
     /* Helpers */
     // Check for TrustManagerImpl class
     private boolean hasTrustManagerImpl() {
-
         try {
             Class.forName("com.android.org.conscrypt.TrustManagerImpl");
         } catch (ClassNotFoundException e) {
@@ -430,8 +431,11 @@ public class Main implements IXposedHookLoadPackage {
         }
 
         public List<X509Certificate> checkServerTrusted(X509Certificate[] chain, String authType, String host) throws CertificateException {
-            ArrayList<X509Certificate> list = new ArrayList<X509Certificate>();
-            return list;
+            if (chain != null) {
+                return Arrays.asList(chain);
+            } else {
+                return new ArrayList<X509Certificate>();
+            }
         }
 
         @Override
